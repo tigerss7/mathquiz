@@ -221,6 +221,47 @@ body::before{
   display:none;
 }
 .btn-next.visible{display:block;animation:popIn 0.3s cubic-bezier(0.34,1.56,0.64,1);}
+.cooldown-wrap{display:none;text-align:center;margin-bottom:12px;}
+.cooldown-wrap.visible{display:block;}
+.cooldown-timer{font-family:'Black Han Sans',sans-serif;font-size:32px;color:var(--accent2);margin-bottom:6px;}
+.cooldown-msg{font-size:13px;color:var(--muted);margin-bottom:10px;}
+.cooldown-bar-bg{background:var(--border);border-radius:6px;height:6px;overflow:hidden;}
+.cooldown-bar-fill{height:100%;background:var(--accent2);border-radius:6px;transition:width 1s linear;}
+.attempt-dots{display:flex;gap:7px;justify-content:center;margin-bottom:16px;}
+.attempt-dot{width:11px;height:11px;border-radius:50%;background:var(--border);}
+.attempt-dot.fail{background:var(--accent2);}
+.reveal-panel{background:var(--card);border:1px solid rgba(240,192,64,0.2);border-radius:var(--radius);padding:24px;text-align:center;display:none;margin-bottom:14px;}
+.reveal-panel.visible{display:block;animation:popIn 0.3s cubic-bezier(0.34,1.56,0.64,1);}
+.reveal-title{font-family:'Black Han Sans',sans-serif;font-size:18px;color:var(--accent);margin-bottom:8px;}
+.reveal-sub{font-size:13px;color:var(--muted);margin-bottom:18px;line-height:1.7;}
+.reveal-btns{display:flex;gap:10px;}
+.btn-reveal-ans{flex:1;padding:13px;background:var(--accent2);color:#fff;border:none;border-radius:12px;font-family:'Black Han Sans',sans-serif;font-size:14px;cursor:pointer;}
+.btn-skip-q{flex:1;padding:13px;background:transparent;color:var(--muted);border:1px solid var(--border);border-radius:12px;font-size:14px;cursor:pointer;}
+
+/* 쿨다운 */
+.cooldown-bar-wrap{background:var(--border);border-radius:6px;height:6px;margin:10px 0;overflow:hidden;display:none;}
+.cooldown-bar{height:100%;background:var(--accent2);border-radius:6px;width:100%;transition:width 1s linear;}
+.cooldown-msg{text-align:center;font-size:13px;color:var(--accent2);margin-bottom:8px;display:none;}
+
+/* 오답 시도 표시 */
+.attempt-dots{display:flex;gap:6px;margin-bottom:14px;justify-content:center;}
+.attempt-dot{width:10px;height:10px;border-radius:50%;background:var(--border);}
+.attempt-dot.wrong{background:var(--accent2);}
+.attempt-dot.active{background:var(--accent);animation:pulse 0.5s ease;}
+
+/* 정답공개 선택 패널 */
+.reveal-panel{
+  background:var(--card);border:1px solid var(--border);
+  border-radius:var(--radius);padding:22px;
+  text-align:center;display:none;
+  animation:popIn 0.3s cubic-bezier(0.34,1.56,0.64,1);
+}
+.reveal-panel.visible{display:block;}
+.reveal-title{font-family:'Black Han Sans',sans-serif;font-size:18px;color:var(--text);margin-bottom:6px;}
+.reveal-sub{font-size:13px;color:var(--muted);margin-bottom:18px;line-height:1.6;}
+.reveal-btns{display:flex;gap:10px;}
+.btn-reveal{flex:1;padding:13px;background:var(--accent2);color:#fff;border:none;border-radius:12px;font-family:'Black Han Sans',sans-serif;font-size:14px;cursor:pointer;}
+.btn-skip{flex:1;padding:13px;background:transparent;color:var(--muted);border:1px solid var(--border);border-radius:12px;font-size:14px;cursor:pointer;}
 
 /* 로딩 */
 .loading{
@@ -290,15 +331,36 @@ body::before{
       <button class="btn-submit" onclick="submitAnswer()">확인</button>
     </div>
 
+    <!-- 오답 횟수 표시 -->
+    <div class="attempt-dots" id="attempt-dots"></div>
+
+    <!-- 결과 패널 -->
     <div class="result-panel" id="result-panel">
       <div class="result-icon" id="result-icon"></div>
       <div class="result-msg" id="result-msg"></div>
       <div class="result-exp" id="result-exp"></div>
     </div>
 
+    <!-- 쿨다운 (3번 오답 이후) -->
+    <div class="cooldown-wrap" id="cooldown-wrap">
+      <div class="cooldown-timer" id="cooldown-timer">30</div>
+      <div class="cooldown-msg">잠시 생각해보세요... ⏳</div>
+      <div class="cooldown-bar-bg"><div class="cooldown-bar-fill" id="cooldown-bar-fill"></div></div>
+    </div>
+
+    <!-- 5번 오답 후 정답공개 선택 -->
+    <div class="reveal-panel" id="reveal-panel">
+      <div class="reveal-title">😵 5번 모두 틀렸어요</div>
+      <div class="reveal-sub">정답을 확인하거나<br>다음 문제로 넘어갈 수 있어요</div>
+      <div class="reveal-btns">
+        <button class="btn-reveal-ans" onclick="revealAnswer()">정답 보기</button>
+        <button class="btn-skip-q" onclick="nextQuestion()">다음 문제 →</button>
+      </div>
+    </div>
+
     <div class="bottom-btns">
       <button class="btn-hint" id="btn-hint" onclick="showHint()">💡 힌트</button>
-      <button class="btn-next visible" id="btn-next" onclick="nextQuestion()" style="display:none;">다음 문제 →</button>
+      <button class="btn-next" id="btn-next" onclick="nextQuestion()" style="display:none;">다음 문제 →</button>
     </div>
   </div>
 </div>
@@ -429,33 +491,40 @@ function loadQuestion(){
   },400);
 }
 
-function renderQuestion(q){
-  document.getElementById('g-level').textContent=state.level;
+let failCount=0;
+let cooldownTimer=null;
 
-  // 프로그레스: 10문제마다 한 사이클
+function renderAttemptDots(){
+  const dots=document.getElementById('attempt-dots');
+  let html='';
+  for(let i=0;i<5;i++){
+    const cls=i<failCount?'attempt-dot fail':'attempt-dot';
+    html+=`<div class="${cls}"></div>`;
+  }
+  dots.innerHTML=html;
+}
+
+function renderQuestion(q){
+  failCount=0;
+  document.getElementById('g-level').textContent=state.level;
   const prog=(state.score%10)*10;
   document.getElementById('progress-fill').style.width=prog+'%';
-
-  // 스트릭
   const sb=document.getElementById('streak-badge');
   document.getElementById('g-streak').textContent=state.streak;
   sb.classList.toggle('hot',state.streak>=3);
-
   document.getElementById('q-type').textContent=q.type;
   document.getElementById('q-text').innerHTML=q.text.replace(/\n/g,'<br>');
   document.getElementById('q-hint').textContent='💡 '+q.hint;
   document.getElementById('q-hint').classList.remove('visible');
 
-  // 결과 패널 초기화
-  const rp=document.getElementById('result-panel');
-  rp.style.display='none';rp.className='result-panel';
-
-  // 다음 버튼 숨기기
-  const nb=document.getElementById('btn-next');
-  nb.style.display='none';nb.classList.remove('visible');
-
-  // 힌트 버튼
+  // 패널 초기화
+  document.getElementById('result-panel').style.display='none';
+  document.getElementById('result-panel').className='result-panel';
+  document.getElementById('cooldown-wrap').classList.remove('visible');
+  document.getElementById('reveal-panel').classList.remove('visible');
+  document.getElementById('btn-next').style.display='none';
   document.getElementById('btn-hint').style.display='block';
+  renderAttemptDots();
 
   if(q.mode==='choice'){
     document.getElementById('choices-area').style.display='flex';
@@ -502,20 +571,20 @@ function submitAnswer(){
 
 function checkAnswer(userAns){
   if(state.answered) return;
-  state.answered=true;
   const q=state.currentQ;
   const correct=userAns.toString().replace(/\s/g,'')===q.answer.toString().replace(/\s/g,'');
 
-  const rp=document.getElementById('result-panel');
-  rp.style.display='block';
-
   if(correct){
+    // ── 정답 ──
+    state.answered=true;
     state.score++;
     state.streak++;
     if(state.streak>state.bestStreak) state.bestStreak=state.streak;
-    // 5문제마다 레벨업
     if(state.score%5===0) state.level++;
+    saveState();
 
+    const rp=document.getElementById('result-panel');
+    rp.style.display='block';
     rp.className='result-panel correct';
     document.getElementById('result-icon').textContent=state.streak>=3?'🔥':'🎉';
     document.getElementById('result-msg').textContent=state.streak>=3?`${state.streak}연속 정답! 대단해요!`:'정답이에요!';
@@ -523,42 +592,112 @@ function checkAnswer(userAns){
 
     if(q.mode==='choice'){
       document.querySelectorAll('.choice-btn').forEach(b=>{
-        if(b.textContent.trim().includes(q.answer)) b.classList.add('correct');
+        if(b.querySelector('div:last-child').textContent===q.answer) b.classList.add('correct');
       });
     } else {
       const inp=document.getElementById('answer-input');
       inp.classList.add('correct');inp.disabled=true;
     }
+
+    document.getElementById('btn-hint').style.display='none';
+    const nb=document.getElementById('btn-next');
+    nb.style.display='block';
+    setTimeout(()=>nb.classList.add('visible'),100);
+    document.getElementById('g-streak').textContent=state.streak;
+    document.getElementById('streak-badge').classList.toggle('hot',state.streak>=3);
+
   } else {
+    // ── 오답 ──
+    failCount++;
     state.streak=0;
-    rp.className='result-panel wrong';
-    document.getElementById('result-icon').textContent='😅';
-    document.getElementById('result-msg').textContent=`정답은 ${q.answer}이에요`;
-    document.getElementById('result-exp').textContent=q.explanation;
+    document.getElementById('g-streak').textContent=0;
+    document.getElementById('streak-badge').classList.remove('hot');
+    renderAttemptDots();
 
     if(q.mode==='choice'){
-      document.querySelectorAll('.choice-btn').forEach(b=>{
-        if(b.classList.contains('selected')) b.classList.add('wrong');
-        if(b.textContent.trim().includes(q.answer)) b.classList.add('correct');
-      });
+      document.querySelectorAll('.choice-btn.selected').forEach(b=>b.classList.add('wrong'));
+      // 선택 해제 후 재도전 가능
+      setTimeout(()=>{
+        document.querySelectorAll('.choice-btn').forEach(b=>b.classList.remove('selected','wrong'));
+      },600);
     } else {
       const inp=document.getElementById('answer-input');
-      inp.classList.add('wrong');inp.disabled=true;
+      inp.classList.add('wrong');
+      setTimeout(()=>{inp.classList.remove('wrong');inp.value='';inp.focus();},600);
     }
+
+    // 틀렸다는 메시지 (정답 미공개)
+    const rp=document.getElementById('result-panel');
+    rp.style.display='block';
+    rp.className='result-panel wrong';
+    document.getElementById('result-icon').textContent=failCount>=3?'😤':'😅';
+    const msgs=['다시 생각해보세요!','아직 아니에요! 한 번 더!','세 번 틀렸어요. 잠깐 쉬어가요.','네 번째... 조금만 더!'];
+    document.getElementById('result-msg').textContent=msgs[Math.min(failCount-1,3)];
+    document.getElementById('result-exp').textContent='';
+
+    if(failCount>=5){
+      // 5번 오답 → 정답공개 선택
+      rp.style.display='none';
+      document.getElementById('cooldown-wrap').classList.remove('visible');
+      document.getElementById('reveal-panel').classList.add('visible');
+      document.getElementById('input-area').style.display='none';
+      document.getElementById('choices-area').style.display='none';
+    } else if(failCount>=3){
+      // 3번 이상 오답 → 30초 쿨다운
+      startCooldown();
+    }
+    // 1~2번 오답은 바로 재도전 가능 (아무것도 안 함)
   }
+}
 
-  saveState();
+function startCooldown(){
+  let secs=30;
+  document.getElementById('cooldown-wrap').classList.add('visible');
+  document.getElementById('cooldown-timer').textContent=secs;
+  document.getElementById('cooldown-bar-fill').style.width='100%';
+  document.getElementById('input-area').style.display='none';
+  document.getElementById('choices-area').style.display='none';
+  document.getElementById('result-panel').style.display='none';
 
+  if(cooldownTimer) clearInterval(cooldownTimer);
+  cooldownTimer=setInterval(()=>{
+    secs--;
+    document.getElementById('cooldown-timer').textContent=secs;
+    document.getElementById('cooldown-bar-fill').style.width=(secs/30*100)+'%';
+    if(secs<=0){
+      clearInterval(cooldownTimer);
+      document.getElementById('cooldown-wrap').classList.remove('visible');
+      // 재도전 허용
+      const q=state.currentQ;
+      if(q.mode==='choice'){
+        document.getElementById('choices-area').style.display='flex';
+      } else {
+        document.getElementById('input-area').style.display='flex';
+        const inp=document.getElementById('answer-input');
+        inp.value='';inp.className='answer-input';inp.disabled=false;
+        inp.focus();
+      }
+    }
+  },1000);
+}
+
+function revealAnswer(){
+  const q=state.currentQ;
+  const rp=document.getElementById('result-panel');
+  document.getElementById('reveal-panel').classList.remove('visible');
+  rp.style.display='block';
+  rp.className='result-panel wrong';
+  document.getElementById('result-icon').textContent='📖';
+  document.getElementById('result-msg').textContent=`정답: ${q.answer}`;
+  document.getElementById('result-exp').textContent=q.explanation;
   const nb=document.getElementById('btn-next');
   nb.style.display='block';
   setTimeout(()=>nb.classList.add('visible'),100);
-  document.getElementById('btn-hint').style.display='none';
-  document.getElementById('g-streak').textContent=state.streak;
-  const sb=document.getElementById('streak-badge');
-  sb.classList.toggle('hot',state.streak>=3);
 }
 
 function nextQuestion(){
+  if(cooldownTimer){clearInterval(cooldownTimer);cooldownTimer=null;}
+  state.answered=false;
   loadQuestion();
 }
 
