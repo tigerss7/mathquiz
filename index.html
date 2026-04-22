@@ -387,7 +387,7 @@ const QUESTIONS = [
   {type:'논리 추론',text:'100명의 학생 중:\n· 수학을 좋아하는 학생: 60명\n· 과학을 좋아하는 학생: 50명\n· 둘 다 좋아하는 학생: 30명\n\n<strong>둘 다 싫어하는 학생은 몇 명?</strong>',answer:'20',hint:'집합의 합집합 공식을 써보세요.',explanation:'60+50-30=80명이 최소 하나 좋아함. 100-80=20명',mode:'input'},
   {type:'논리 추론',text:'어떤 상자에 빨간 공 3개, 파란 공 3개가 있습니다. 눈을 감고 꺼낼 때, <strong>반드시 같은 색 공 2개를 가지려면 최소 몇 개를 꺼내야 할까요?</strong>',answer:'3',hint:'최악의 경우를 생각해보세요.',explanation:'최악의 경우 빨강1+파랑1이 나올 수 있어요. 3번째엔 반드시 같은 색이 나와요.',mode:'input'},
   {type:'논리 추론',text:'5명이 원형 테이블에 앉아 있습니다. A의 왼쪽엔 B, B의 왼쪽엔 C, D는 A와 마주봅니다. <strong>E의 오른쪽엔 누가 앉을까요?</strong>',choices:['A','B','C','D'],answer:'A',hint:'원형으로 배치해보세요. A-B-C-?-D-?',explanation:'순서: A-B-C-E-D. E의 오른쪽은 A',mode:'choice'},
-  {type:'논리 추론',text:'어떤 수에 5를 더하고 3을 곱한 다음 6을 빼면 39가 됩니다. <strong>어떤 수는 무엇일까요?</strong>',answer:'8',hint:'거꾸로 계산해보세요.',explanation:'역산: 39+6=45, 45÷3=15, 15-5=10... 아니면 방정식: (x+5)×3-6=39',mode:'input'},
+  {type:'논리 추론',text:'어떤 수에 5를 더하고 3을 곱한 다음 6을 빼면 39가 됩니다. <strong>어떤 수는 무엇일까요?</strong>',answer:'10',hint:'역으로 계산해보세요. 39+6=45부터 시작!',explanation:'(x+5)×3-6=39 → (x+5)×3=45 → x+5=15 → x=10',mode:'input'},
   {type:'논리 추론',text:'3명이 모두 악수를 한 번씩 나눴을 때 총 악수 횟수는 3번입니다.\n<strong>5명이 모두 악수를 한 번씩 나누면 총 몇 번일까요?</strong>',answer:'10',hint:'조합(Combination) 5C2를 계산해보세요.',explanation:'5×4÷2 = 10번. 5명 중 2명을 고르는 경우의 수',mode:'input'},
 
   // ── 창의 수학 ──
@@ -396,7 +396,7 @@ const QUESTIONS = [
   {type:'창의 수학',text:'1부터 100까지 모든 자연수를 더하면 얼마일까요?',answer:'5050',hint:'가우스의 방법: 1+100, 2+99, ...',explanation:'101×50 = 5050. (1+100)쌍이 50개',mode:'input'},
   {type:'창의 수학',text:'어떤 마을에 이발사가 한 명 있는데, 스스로 이발하지 않는 마을 사람만 이발해줍니다. <strong>그렇다면 이발사 자신은 누가 이발해줄까요?</strong>',choices:['이발사 본인','다른 마을 이발사','이발 안 함','알 수 없음'],answer:'알 수 없음',hint:'이발사가 본인을 이발하면? 이발 안 하면?',explanation:'러셀의 역설이에요. 어떤 경우도 모순이 생겨 답이 없어요.',mode:'choice'},
   {type:'창의 수학',text:'달팽이가 깊이 10m 우물 아래에 있어요. 낮에 3m 올라가고 밤에 2m 미끄러집니다. <strong>달팽이가 우물을 탈출하는 날은 며칠째일까요?</strong>',answer:'8',hint:'마지막 날엔 미끄러지지 않아요!',explanation:'7일 후 7m, 8일째 낮에 10m 도달. 8일째',mode:'input'},
-  {type:'창의 수학',text:'100원짜리와 500원짜리 동전만으로 1600원을 만들려고 합니다. <strong>동전을 가장 적게 쓰는 방법은 몇 개?</strong>',answer:'5',hint:'500원짜리를 최대한 많이 쓰세요.',explanation:'500×3=1500, 100×1=100 → 3+1=4... 아니면 500×2+100×6=8. 최소: 500×3+100×1=4개. 아 1500+100=1600, 4개',mode:'input'},
+  {type:'창의 수학',text:'100원짜리와 500원짜리 동전만으로 1600원을 만들려고 합니다. <strong>동전을 가장 적게 쓰는 방법은 몇 개?</strong>',answer:'4',hint:'500원짜리를 최대한 많이 쓰세요.',explanation:'500원×3개=1500원, 100원×1개=100원 → 합계 1600원. 총 4개가 최소!',mode:'input'},
   {type:'창의 수학',text:'<strong>ABCDE × 4 = EDCBA</strong>\n각 글자가 서로 다른 숫자라면, A는?',answer:'2',hint:'ABCDE를 5자리 수라 하면, ×4해도 5자리가 되어야 해요.',explanation:'A=2이면 ABCDE=21978, 21978×4=87912=EDCBA. A=2',mode:'input'},
 
   // ── 언어·도형 논리 ──
@@ -408,7 +408,7 @@ const QUESTIONS = [
   {type:'언어·도형',text:'A, B, C, D, E 5장의 카드가 있습니다. 이 중 3장을 골라 나열하는 경우의 수는?',answer:'60',hint:'순열 nPr = n!/(n-r)!',explanation:'5P3 = 5×4×3 = 60가지',mode:'input'},
 
   // ── 심화 문제 ──
-  {type:'심화',text:'두 자리 수 AB가 있습니다. AB + BA = 121일 때, <strong>A×B의 최댓값은?</strong>',answer:'28',hint:'A+B=11이 되어야 해요. 10A+B+10B+A=11(A+B)',explanation:'A+B=11. 가능한 쌍: (2,9),(3,8),(4,7),(5,6). 곱의 최대: 4×7=28',mode:'input'},
+  {type:'심화',text:'두 자리 수 AB가 있습니다. AB + BA = 121일 때, <strong>A×B의 최댓값은?</strong>',answer:'30',hint:'A+B=11이 되어야 해요. 11(A+B)=121',explanation:'A+B=11. 가능한 쌍의 곱: 2×9=18, 3×8=24, 4×7=28, 5×6=30. 최댓값은 5×6=30!',mode:'input'},
   {type:'심화',text:'1, 2, 3, ..., 9, 10 중에서 <strong>홀수만 더하면 얼마?</strong>',answer:'25',hint:'1, 3, 5, 7, 9를 더해요.',explanation:'1+3+5+7+9 = 25',mode:'input'},
   {type:'심화',text:'어떤 수를 7로 나누면 나머지가 3이고, 5로 나누면 나머지가 1입니다. <strong>이를 만족하는 가장 작은 자연수는?</strong>',answer:'31',hint:'7k+3 형태의 수를 5로 나눠보세요.',explanation:'7×4+3=31. 31÷5=6...1. 조건 만족!',mode:'input'},
   {type:'심화',text:'30명의 학생 중 안경 쓴 학생이 12명, 남학생이 18명입니다. 안경을 쓴 남학생이 8명이라면, <strong>안경도 안 쓰고 여학생도 아닌 학생은?</strong>',answer:'8',hint:'벤다이어그램을 그려보세요.',explanation:'안경 남: 8, 안경 여: 4, 남(안경X): 10, 여: 12. 안경안쓴 남: 18-8=10',mode:'input'},
