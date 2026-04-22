@@ -1,6 +1,6 @@
 {
-  "name": "뇌풀기 - 문제적 남자 퀴즈",
-  "short_name": "뇌풀기",
+  "name": "문제적 남자",
+  "short_name": "문제적 남자",
   "description": "문제적 남자 스타일 수학·논리 퀴즈",
   "start_url": "./index.html",
   "display": "standalone",
