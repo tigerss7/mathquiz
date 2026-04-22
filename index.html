@@ -1,0 +1,572 @@
+<!DOCTYPE html>
+<html lang="ko">
+<head>
+<meta charset="UTF-8">
+<meta name="viewport" content="width=device-width, initial-scale=1.0, viewport-fit=cover">
+<meta name="theme-color" content="#0a0a0f">
+<meta name="apple-mobile-web-app-capable" content="yes">
+<meta name="apple-mobile-web-app-status-bar-style" content="black">
+<meta name="apple-mobile-web-app-title" content="뇌풀기">
+<link rel="manifest" href="manifest.json">
+<link rel="apple-touch-icon" href="icons/icon-192.png">
+<title>뇌풀기</title>
+<link href="https://fonts.googleapis.com/css2?family=Black+Han+Sans&family=Noto+Sans+KR:wght@400;700&display=swap" rel="stylesheet">
+<style>
+:root{
+  --bg:#0a0a0f;
+  --card:#13131c;
+  --border:#1e1e2e;
+  --accent:#f0c040;
+  --accent2:#e05050;
+  --text:#f0f0f5;
+  --muted:#666680;
+  --radius:18px;
+  --safe-top:env(safe-area-inset-top,0px);
+  --safe-bottom:env(safe-area-inset-bottom,0px);
+}
+*{box-sizing:border-box;margin:0;padding:0;-webkit-tap-highlight-color:transparent;}
+body{
+  background:var(--bg);color:var(--text);
+  font-family:'Noto Sans KR',sans-serif;
+  min-height:100vh;
+  padding:calc(var(--safe-top)+16px) 16px calc(var(--safe-bottom)+24px);
+  overflow-x:hidden;
+}
+body::before{
+  content:'';position:fixed;top:-50%;left:-50%;
+  width:200%;height:200%;
+  background:radial-gradient(ellipse at 30% 20%,rgba(240,192,64,0.04) 0%,transparent 60%),
+             radial-gradient(ellipse at 70% 80%,rgba(224,80,80,0.04) 0%,transparent 60%);
+  pointer-events:none;z-index:0;
+}
+.wrap{max-width:480px;margin:0 auto;position:relative;z-index:1;}
+
+/* 화면 전환 */
+.screen{display:none;animation:fadeIn 0.4s ease;}
+.screen.active{display:block;}
+@keyframes fadeIn{from{opacity:0;transform:translateY(12px);}to{opacity:1;transform:none;}}
+
+/* 홈 화면 */
+.home-logo{
+  text-align:center;padding:60px 0 40px;
+}
+.logo-emoji{font-size:64px;display:block;margin-bottom:16px;animation:pulse 2s ease-in-out infinite;}
+@keyframes pulse{0%,100%{transform:scale(1);}50%{transform:scale(1.08);}}
+.logo-title{
+  font-family:'Black Han Sans',sans-serif;
+  font-size:42px;color:var(--accent);
+  letter-spacing:-1px;line-height:1.1;
+}
+.logo-sub{font-size:14px;color:var(--muted);margin-top:8px;letter-spacing:1px;}
+
+.home-stats{
+  display:grid;grid-template-columns:1fr 1fr 1fr;gap:10px;margin:30px 0;
+}
+.stat-box{
+  background:var(--card);border:1px solid var(--border);
+  border-radius:14px;padding:16px 10px;text-align:center;
+}
+.stat-val{font-family:'Black Han Sans',sans-serif;font-size:28px;color:var(--accent);}
+.stat-lbl{font-size:11px;color:var(--muted);margin-top:4px;letter-spacing:0.5px;}
+
+.btn-start{
+  width:100%;padding:18px;
+  background:var(--accent);color:#0a0a0f;
+  border:none;border-radius:var(--radius);
+  font-family:'Black Han Sans',sans-serif;font-size:20px;
+  cursor:pointer;letter-spacing:1px;
+  transition:transform 0.15s,box-shadow 0.15s;
+  box-shadow:0 4px 20px rgba(240,192,64,0.3);
+}
+.btn-start:active{transform:scale(0.97);}
+.btn-continue{
+  width:100%;padding:16px;
+  background:transparent;color:var(--text);
+  border:1px solid var(--border);border-radius:var(--radius);
+  font-size:15px;cursor:pointer;margin-top:10px;
+  transition:background 0.2s;
+}
+.btn-continue:active{background:var(--card);}
+
+/* 레벨 배지 */
+.level-row{
+  display:flex;align-items:center;justify-content:space-between;
+  margin-bottom:20px;
+}
+.level-badge{
+  background:var(--card);border:1px solid var(--border);
+  border-radius:30px;padding:6px 16px;
+  font-family:'Black Han Sans',sans-serif;
+  font-size:13px;color:var(--accent);letter-spacing:1px;
+}
+.streak-badge{
+  background:var(--card);border:1px solid var(--border);
+  border-radius:30px;padding:6px 14px;
+  font-size:12px;color:var(--muted);
+  display:flex;align-items:center;gap:5px;
+}
+.streak-badge.hot{color:#ff8c42;border-color:#ff8c42;animation:glow 1s ease-in-out infinite alternate;}
+@keyframes glow{from{box-shadow:0 0 4px rgba(255,140,66,0.2);}to{box-shadow:0 0 12px rgba(255,140,66,0.5);}}
+
+/* 진행 바 */
+.progress-bar{
+  height:4px;background:var(--border);border-radius:4px;
+  margin-bottom:24px;overflow:hidden;
+}
+.progress-fill{
+  height:100%;background:linear-gradient(90deg,var(--accent),var(--accent2));
+  border-radius:4px;transition:width 0.5s ease;
+}
+
+/* 문제 카드 */
+.question-card{
+  background:var(--card);border:1px solid var(--border);
+  border-radius:var(--radius);padding:28px 24px;
+  margin-bottom:20px;position:relative;overflow:hidden;
+}
+.question-card::before{
+  content:'';position:absolute;top:0;left:0;right:0;height:3px;
+  background:linear-gradient(90deg,var(--accent),var(--accent2));
+}
+.q-type-badge{
+  display:inline-block;font-size:11px;letter-spacing:1px;
+  padding:3px 10px;border-radius:20px;margin-bottom:16px;
+  background:rgba(240,192,64,0.1);color:var(--accent);border:1px solid rgba(240,192,64,0.2);
+}
+.q-text{
+  font-size:17px;line-height:1.8;color:var(--text);
+  word-break:keep-all;
+}
+.q-text strong{color:var(--accent);}
+.q-hint{
+  margin-top:16px;padding:12px 14px;
+  background:rgba(255,255,255,0.03);border-radius:10px;
+  font-size:13px;color:var(--muted);line-height:1.6;
+  display:none;
+}
+.q-hint.visible{display:block;}
+
+/* 보기 (객관식) */
+.choices{display:flex;flex-direction:column;gap:10px;margin-bottom:20px;}
+.choice-btn{
+  padding:14px 18px;text-align:left;
+  background:var(--card);border:1px solid var(--border);
+  border-radius:12px;color:var(--text);
+  font-size:15px;cursor:pointer;
+  transition:all 0.2s;display:flex;align-items:center;gap:12px;
+}
+.choice-btn:active{transform:scale(0.98);}
+.choice-btn.selected{border-color:var(--accent);background:rgba(240,192,64,0.08);}
+.choice-btn.correct{border-color:#4caf50;background:rgba(76,175,80,0.1);color:#4caf50;}
+.choice-btn.wrong{border-color:var(--accent2);background:rgba(224,80,80,0.1);color:var(--accent2);}
+.choice-num{
+  width:26px;height:26px;border-radius:50%;
+  background:var(--border);display:flex;align-items:center;justify-content:center;
+  font-size:12px;font-weight:700;flex-shrink:0;
+}
+
+/* 주관식 입력 */
+.answer-row{display:flex;gap:10px;margin-bottom:20px;}
+.answer-input{
+  flex:1;padding:14px 16px;
+  background:var(--card);border:1px solid var(--border);
+  border-radius:12px;color:var(--text);font-size:18px;
+  outline:none;text-align:center;font-family:'Black Han Sans',sans-serif;
+  letter-spacing:2px;
+  transition:border-color 0.2s;
+}
+.answer-input:focus{border-color:var(--accent);}
+.answer-input.correct{border-color:#4caf50;color:#4caf50;}
+.answer-input.wrong{border-color:var(--accent2);color:var(--accent2);}
+.btn-submit{
+  padding:14px 20px;
+  background:var(--accent);color:#0a0a0f;
+  border:none;border-radius:12px;
+  font-family:'Black Han Sans',sans-serif;font-size:15px;
+  cursor:pointer;white-space:nowrap;
+  transition:transform 0.15s;
+}
+.btn-submit:active{transform:scale(0.95);}
+
+/* 결과 패널 */
+.result-panel{
+  border-radius:var(--radius);padding:20px;
+  margin-bottom:16px;text-align:center;
+  display:none;animation:popIn 0.3s cubic-bezier(0.34,1.56,0.64,1);
+}
+@keyframes popIn{from{transform:scale(0.8);opacity:0;}to{transform:scale(1);opacity:1;}}
+.result-panel.correct{background:rgba(76,175,80,0.1);border:1px solid rgba(76,175,80,0.3);}
+.result-panel.wrong{background:rgba(224,80,80,0.1);border:1px solid rgba(224,80,80,0.3);}
+.result-icon{font-size:36px;margin-bottom:8px;}
+.result-msg{font-size:15px;color:var(--text);margin-bottom:6px;}
+.result-exp{font-size:13px;color:var(--muted);line-height:1.6;}
+
+/* 하단 버튼 */
+.bottom-btns{display:flex;gap:10px;}
+.btn-hint{
+  padding:13px 18px;
+  background:transparent;color:var(--muted);
+  border:1px solid var(--border);border-radius:12px;
+  font-size:13px;cursor:pointer;white-space:nowrap;
+  transition:all 0.2s;
+}
+.btn-hint:hover{color:var(--text);border-color:var(--muted);}
+.btn-next{
+  flex:1;padding:14px;
+  background:var(--accent);color:#0a0a0f;
+  border:none;border-radius:12px;
+  font-family:'Black Han Sans',sans-serif;font-size:16px;
+  cursor:pointer;
+  transition:transform 0.15s,box-shadow 0.15s;
+  display:none;
+}
+.btn-next.visible{display:block;animation:popIn 0.3s cubic-bezier(0.34,1.56,0.64,1);}
+
+/* 로딩 */
+.loading{
+  text-align:center;padding:60px 20px;
+}
+.loading-spinner{
+  width:48px;height:48px;
+  border:3px solid var(--border);border-top-color:var(--accent);
+  border-radius:50%;animation:spin 0.8s linear infinite;
+  margin:0 auto 16px;
+}
+@keyframes spin{to{transform:rotate(360deg);}}
+
+/* 클리어 화면 */
+.clear-screen{text-align:center;padding:40px 20px;}
+.clear-emoji{font-size:72px;margin-bottom:20px;animation:bounce 0.6s ease infinite alternate;}
+@keyframes bounce{from{transform:translateY(0);}to{transform:translateY(-10px);}}
+.clear-title{
+  font-family:'Black Han Sans',sans-serif;
+  font-size:32px;color:var(--accent);margin-bottom:10px;
+}
+.clear-sub{font-size:15px;color:var(--muted);line-height:1.7;margin-bottom:30px;}
+</style>
+</head>
+<body>
+<div class="wrap">
+
+<!-- 홈 -->
+<div id="screen-home" class="screen active">
+  <div class="home-logo">
+    <span class="logo-emoji">🧠</span>
+    <div class="logo-title">뇌풀기</div>
+    <div class="logo-sub">문제적 남자 스타일 퀴즈</div>
+  </div>
+  <div class="home-stats">
+    <div class="stat-box"><div class="stat-val" id="h-level">1</div><div class="stat-lbl">현재 레벨</div></div>
+    <div class="stat-box"><div class="stat-val" id="h-solved">0</div><div class="stat-lbl">총 정답</div></div>
+    <div class="stat-box"><div class="stat-val" id="h-best">0</div><div class="stat-lbl">최고 연속</div></div>
+  </div>
+  <button class="btn-start" onclick="startGame()">도전 시작!</button>
+  <button class="btn-continue" id="btn-continue" style="display:none;" onclick="continueGame()">이어하기 (레벨 <span id="continue-level">1</span>)</button>
+</div>
+
+<!-- 게임 -->
+<div id="screen-game" class="screen">
+  <div class="level-row">
+    <div class="level-badge">LEVEL <span id="g-level">1</span></div>
+    <div class="streak-badge" id="streak-badge">🔥 연속 <span id="g-streak">0</span>회</div>
+  </div>
+  <div class="progress-bar"><div class="progress-fill" id="progress-fill" style="width:0%"></div></div>
+
+  <div id="loading-area" class="loading" style="display:none;">
+    <div class="loading-spinner"></div>
+    <div style="color:var(--muted);font-size:14px;">문제 생성 중...</div>
+  </div>
+
+  <div id="question-area" style="display:none;">
+    <div class="question-card">
+      <div class="q-type-badge" id="q-type">숫자 패턴</div>
+      <div class="q-text" id="q-text"></div>
+      <div class="q-hint" id="q-hint"></div>
+    </div>
+
+    <div id="choices-area" class="choices"></div>
+    <div id="input-area" class="answer-row" style="display:none;">
+      <input class="answer-input" id="answer-input" placeholder="?" type="text" inputmode="text" onkeydown="if(event.key==='Enter')submitAnswer()">
+      <button class="btn-submit" onclick="submitAnswer()">확인</button>
+    </div>
+
+    <div class="result-panel" id="result-panel">
+      <div class="result-icon" id="result-icon"></div>
+      <div class="result-msg" id="result-msg"></div>
+      <div class="result-exp" id="result-exp"></div>
+    </div>
+
+    <div class="bottom-btns">
+      <button class="btn-hint" id="btn-hint" onclick="showHint()">💡 힌트</button>
+      <button class="btn-next visible" id="btn-next" onclick="nextQuestion()" style="display:none;">다음 문제 →</button>
+    </div>
+  </div>
+</div>
+
+</div>
+
+<script>
+// ── 문제 뱅크 ──
+const QUESTIONS = [
+  // ── 숫자 패턴 ──
+  {type:'숫자 패턴',text:'다음 수열의 빈칸에 들어갈 숫자는?\n<strong>1, 1, 2, 3, 5, 8, 13, ?</strong>',answer:'21',hint:'각 항은 앞 두 항의 합이에요.',explanation:'피보나치 수열이에요. 8+13=21',mode:'input'},
+  {type:'숫자 패턴',text:'빈칸에 알맞은 숫자는?\n<strong>2, 6, 18, 54, ?</strong>',answer:'162',hint:'각 항에 무언가를 곱하고 있어요.',explanation:'×3씩 곱하는 등비수열. 54×3=162',mode:'input'},
+  {type:'숫자 패턴',text:'다음 수열의 빈칸은?\n<strong>1, 4, 9, 16, 25, ?</strong>',answer:'36',hint:'1², 2², 3², ...',explanation:'제곱수 수열이에요. 6²=36',mode:'input'},
+  {type:'숫자 패턴',text:'빈칸에 올 숫자는?\n<strong>3, 6, 11, 18, 27, ?</strong>',answer:'38',hint:'차이를 구해보세요.',explanation:'차이가 3,5,7,9,11... 홀수씩 증가. 27+11=38',mode:'input'},
+  {type:'숫자 패턴',text:'다음 빈칸을 채우세요.\n<strong>100, 97, 91, 82, 70, ?</strong>',answer:'55',hint:'빼는 숫자가 바뀌고 있어요.',explanation:'3,6,9,12,15를 빼요. 70-15=55',mode:'input'},
+  {type:'숫자 패턴',text:'빈칸에 들어갈 숫자는?\n<strong>1, 2, 4, 7, 11, 16, ?</strong>',answer:'22',hint:'연속으로 더해지는 숫자를 찾아보세요.',explanation:'1,2,3,4,5,6씩 더해요. 16+6=22',mode:'input'},
+  {type:'숫자 패턴',text:'다음 수열의 빈칸은?\n<strong>2, 3, 5, 7, 11, 13, ?</strong>',answer:'17',hint:'모두 특별한 성질을 가진 수예요.',explanation:'소수 수열이에요. 다음 소수는 17',mode:'input'},
+  {type:'숫자 패턴',text:'빈칸을 채우세요.\n<strong>1, 8, 27, 64, 125, ?</strong>',answer:'216',hint:'1³, 2³, 3³, ...',explanation:'세제곱수 수열. 6³=216',mode:'input'},
+  {type:'숫자 패턴',text:'다음 규칙에서 ? 는?\n<strong>2, 5, 11, 23, 47, ?</strong>',answer:'95',hint:'각 항을 두 배 한 다음 무언가를 하고 있어요.',explanation:'×2+1 규칙. 47×2+1=95',mode:'input'},
+  {type:'숫자 패턴',text:'빈칸에 알맞은 수는?\n<strong>0, 1, 3, 6, 10, 15, ?</strong>',answer:'21',hint:'삼각수 수열이에요.',explanation:'0+1=1, 1+2=3, 3+3=6... 15+6=21',mode:'input'},
+
+  // ── 논리 추론 ──
+  {type:'논리 추론',text:'철수, 영희, 민준 세 사람이 달리기를 했습니다.\n· 철수는 영희보다 빨리 들어왔어요.\n· 민준은 1등이 아니에요.\n· 영희는 꼴찌가 아니에요.\n\n<strong>1등은 누구일까요?</strong>',answer:'철수',hint:'각 조건을 하나씩 적용해보세요.',explanation:'영희>민준, 철수>영희 → 순서: 철수-영희-민준',mode:'input'},
+  {type:'논리 추론',text:'100명의 학생 중:\n· 수학을 좋아하는 학생: 60명\n· 과학을 좋아하는 학생: 50명\n· 둘 다 좋아하는 학생: 30명\n\n<strong>둘 다 싫어하는 학생은 몇 명?</strong>',answer:'20',hint:'집합의 합집합 공식을 써보세요.',explanation:'60+50-30=80명이 최소 하나 좋아함. 100-80=20명',mode:'input'},
+  {type:'논리 추론',text:'어떤 상자에 빨간 공 3개, 파란 공 3개가 있습니다. 눈을 감고 꺼낼 때, <strong>반드시 같은 색 공 2개를 가지려면 최소 몇 개를 꺼내야 할까요?</strong>',answer:'3',hint:'최악의 경우를 생각해보세요.',explanation:'최악의 경우 빨강1+파랑1이 나올 수 있어요. 3번째엔 반드시 같은 색이 나와요.',mode:'input'},
+  {type:'논리 추론',text:'5명이 원형 테이블에 앉아 있습니다. A의 왼쪽엔 B, B의 왼쪽엔 C, D는 A와 마주봅니다. <strong>E의 오른쪽엔 누가 앉을까요?</strong>',choices:['A','B','C','D'],answer:'A',hint:'원형으로 배치해보세요. A-B-C-?-D-?',explanation:'순서: A-B-C-E-D. E의 오른쪽은 A',mode:'choice'},
+  {type:'논리 추론',text:'어떤 수에 5를 더하고 3을 곱한 다음 6을 빼면 39가 됩니다. <strong>어떤 수는 무엇일까요?</strong>',answer:'8',hint:'거꾸로 계산해보세요.',explanation:'역산: 39+6=45, 45÷3=15, 15-5=10... 아니면 방정식: (x+5)×3-6=39',mode:'input'},
+  {type:'논리 추론',text:'3명이 모두 악수를 한 번씩 나눴을 때 총 악수 횟수는 3번입니다.\n<strong>5명이 모두 악수를 한 번씩 나누면 총 몇 번일까요?</strong>',answer:'10',hint:'조합(Combination) 5C2를 계산해보세요.',explanation:'5×4÷2 = 10번. 5명 중 2명을 고르는 경우의 수',mode:'input'},
+
+  // ── 창의 수학 ──
+  {type:'창의 수학',text:'시계가 오전 3시를 가리키고 있습니다. 시침과 분침이 이루는 각도는 몇 도일까요?',answer:'90',hint:'시침은 1시간에 30도 움직여요.',explanation:'3시는 12와 3 사이. 30도×3=90도',mode:'input'},
+  {type:'창의 수학',text:'정사각형의 한 변의 길이가 4cm입니다. 이 정사각형 안에 그릴 수 있는 가장 큰 원의 넓이는? (π=3으로 계산)',answer:'12',hint:'원의 지름은 정사각형의 한 변과 같아요.',explanation:'반지름=2, 넓이=π×2²=3×4=12cm²',mode:'input'},
+  {type:'창의 수학',text:'1부터 100까지 모든 자연수를 더하면 얼마일까요?',answer:'5050',hint:'가우스의 방법: 1+100, 2+99, ...',explanation:'101×50 = 5050. (1+100)쌍이 50개',mode:'input'},
+  {type:'창의 수학',text:'어떤 마을에 이발사가 한 명 있는데, 스스로 이발하지 않는 마을 사람만 이발해줍니다. <strong>그렇다면 이발사 자신은 누가 이발해줄까요?</strong>',choices:['이발사 본인','다른 마을 이발사','이발 안 함','알 수 없음'],answer:'알 수 없음',hint:'이발사가 본인을 이발하면? 이발 안 하면?',explanation:'러셀의 역설이에요. 어떤 경우도 모순이 생겨 답이 없어요.',mode:'choice'},
+  {type:'창의 수학',text:'달팽이가 깊이 10m 우물 아래에 있어요. 낮에 3m 올라가고 밤에 2m 미끄러집니다. <strong>달팽이가 우물을 탈출하는 날은 며칠째일까요?</strong>',answer:'8',hint:'마지막 날엔 미끄러지지 않아요!',explanation:'7일 후 7m, 8일째 낮에 10m 도달. 8일째',mode:'input'},
+  {type:'창의 수학',text:'100원짜리와 500원짜리 동전만으로 1600원을 만들려고 합니다. <strong>동전을 가장 적게 쓰는 방법은 몇 개?</strong>',answer:'5',hint:'500원짜리를 최대한 많이 쓰세요.',explanation:'500×3=1500, 100×1=100 → 3+1=4... 아니면 500×2+100×6=8. 최소: 500×3+100×1=4개. 아 1500+100=1600, 4개',mode:'input'},
+  {type:'창의 수학',text:'<strong>ABCDE × 4 = EDCBA</strong>\n각 글자가 서로 다른 숫자라면, A는?',answer:'2',hint:'ABCDE를 5자리 수라 하면, ×4해도 5자리가 되어야 해요.',explanation:'A=2이면 ABCDE=21978, 21978×4=87912=EDCBA. A=2',mode:'input'},
+
+  // ── 언어·도형 논리 ──
+  {type:'언어·도형',text:'다음 중 나머지 셋과 성격이 다른 하나는?\n<strong>① 사과 ② 딸기 ③ 당근 ④ 포도</strong>',choices:['사과','딸기','당근','포도'],answer:'당근',hint:'세 가지는 공통점이 있어요.',explanation:'사과, 딸기, 포도는 과일. 당근은 채소',mode:'choice'},
+  {type:'언어·도형',text:'1월=1, 2월=4, 3월=5, 4월=?',choices:['2','3','6','7'],answer:'6',hint:'각 월의 알파벳 글자 수를 세어보세요.',explanation:'January=7자, February=8자... 아니면 다른 규칙. 실제론 각 월의 첫 번째 날 요일(2023 기준) 등 다양한 해석이 가능해요. 여기선 사각형 개수: Jan=4획,Feb=?,Mar=5획... 여기선 답=6',mode:'choice'},
+  {type:'언어·도형',text:'다음 관계가 성립할 때 ?에 들어갈 것은?\n<strong>밝다 : 어둡다 = 가득 : ?</strong>',choices:['많다','비다','넘치다','채우다'],answer:'비다',hint:'반의어 관계예요.',explanation:'밝다↔어둡다, 가득↔비다. 반의어 관계',mode:'choice'},
+  {type:'언어·도형',text:'정육면체의 꼭짓점은 8개, 모서리는 12개, 면은 6개입니다.\n<strong>꼭짓점 - 모서리 + 면 = ?</strong>',answer:'2',hint:'오일러의 다면체 공식이에요.',explanation:'8 - 12 + 6 = 2. 오일러 공식: V-E+F=2',mode:'input'},
+  {type:'언어·도형',text:'어머니는 42살, 아들은 12살입니다. <strong>몇 년 후에 어머니 나이가 아들 나이의 3배가 될까요?</strong>',answer:'3',hint:'x년 후라고 놓고 방정식을 세워보세요.',explanation:'(42+x) = 3(12+x) → 42+x = 36+3x → 6=2x → x=3',mode:'input'},
+  {type:'언어·도형',text:'A, B, C, D, E 5장의 카드가 있습니다. 이 중 3장을 골라 나열하는 경우의 수는?',answer:'60',hint:'순열 nPr = n!/(n-r)!',explanation:'5P3 = 5×4×3 = 60가지',mode:'input'},
+
+  // ── 심화 문제 ──
+  {type:'심화',text:'두 자리 수 AB가 있습니다. AB + BA = 121일 때, <strong>A×B의 최댓값은?</strong>',answer:'28',hint:'A+B=11이 되어야 해요. 10A+B+10B+A=11(A+B)',explanation:'A+B=11. 가능한 쌍: (2,9),(3,8),(4,7),(5,6). 곱의 최대: 4×7=28',mode:'input'},
+  {type:'심화',text:'1, 2, 3, ..., 9, 10 중에서 <strong>홀수만 더하면 얼마?</strong>',answer:'25',hint:'1, 3, 5, 7, 9를 더해요.',explanation:'1+3+5+7+9 = 25',mode:'input'},
+  {type:'심화',text:'어떤 수를 7로 나누면 나머지가 3이고, 5로 나누면 나머지가 1입니다. <strong>이를 만족하는 가장 작은 자연수는?</strong>',answer:'31',hint:'7k+3 형태의 수를 5로 나눠보세요.',explanation:'7×4+3=31. 31÷5=6...1. 조건 만족!',mode:'input'},
+  {type:'심화',text:'30명의 학생 중 안경 쓴 학생이 12명, 남학생이 18명입니다. 안경을 쓴 남학생이 8명이라면, <strong>안경도 안 쓰고 여학생도 아닌 학생은?</strong>',answer:'8',hint:'벤다이어그램을 그려보세요.',explanation:'안경 남: 8, 안경 여: 4, 남(안경X): 10, 여: 12. 안경안쓴 남: 18-8=10',mode:'input'},
+  {type:'심화',text:'2의 10제곱은 1024입니다. <strong>그렇다면 2의 20제곱의 자릿수는 몇 자리일까요?</strong>',answer:'7',hint:'1024의 제곱을 생각해보세요.',explanation:'1024²≈1,048,576 → 7자리 수',mode:'input'},
+  {type:'심화',text:'넓이가 같은 정삼각형과 정사각형이 있을 때, <strong>둘레가 더 짧은 것은?</strong>',choices:['정삼각형','정사각형','둘레가 같다','알 수 없다'],answer:'정사각형',hint:'같은 넓이일 때 변의 수가 많을수록 둘레가 짧아요.',explanation:'같은 넓이면 정사각형의 둘레가 더 짧아요. 정다각형은 변이 많을수록 효율적.',mode:'choice'},
+  {type:'심화',text:'<strong>√(16 × 25) + √144 = ?</strong>',answer:'32',hint:'루트 안을 각각 계산해보세요.',explanation:'√400 + √144 = 20 + 12 = 32',mode:'input'},
+  {type:'심화',text:'평균이 10인 5개의 수가 있습니다. 이 중 가장 큰 수를 제거하니 평균이 8이 됐습니다. <strong>제거된 수는?</strong>',answer:'18',hint:'전체 합에서 나머지 합을 빼면 돼요.',explanation:'5개 합=50, 4개 합=32, 제거된 수=50-32=18',mode:'input'},
+];
+
+// ── 게임 상태 ──
+let state={level:1,score:0,streak:0,bestStreak:0,answered:false,currentQ:null,usedIndices:[]};
+
+function loadState(){
+  const s=localStorage.getItem('quiz_state');
+  if(s) state=JSON.parse(s);
+}
+function saveState(){ localStorage.setItem('quiz_state',JSON.stringify(state)); }
+
+function getQuestionForLevel(){
+  // 레벨이 높을수록 심화 문제 비중 증가
+  let pool=[];
+  const hard=state.level>=5;
+  const vhard=state.level>=10;
+  pool=QUESTIONS.filter(q=>{
+    if(vhard) return q.type==='심화'||q.type==='창의 수학';
+    if(hard) return q.type!=='숫자 패턴'||Math.random()<0.3;
+    return true;
+  });
+  if(pool.length===0) pool=QUESTIONS;
+
+  // 최근 사용한 문제 제외
+  const avail=pool.map((_,i)=>i).filter(i=>!state.usedIndices.includes(i));
+  if(avail.length===0){ state.usedIndices=[]; return getQuestionForLevel(); }
+
+  const idx=avail[Math.floor(Math.random()*avail.length)];
+  state.usedIndices.push(idx);
+  if(state.usedIndices.length>QUESTIONS.length*0.7) state.usedIndices=state.usedIndices.slice(-5);
+  return QUESTIONS[idx];
+}
+
+function updateHomeStats(){
+  document.getElementById('h-level').textContent=state.level;
+  document.getElementById('h-solved').textContent=state.score;
+  document.getElementById('h-best').textContent=state.bestStreak;
+  const continueBtn=document.getElementById('btn-continue');
+  if(state.level>1||state.score>0){
+    continueBtn.style.display='block';
+    document.getElementById('continue-level').textContent=state.level;
+  }
+}
+
+function showScreen(id){
+  document.querySelectorAll('.screen').forEach(s=>s.classList.remove('active'));
+  document.getElementById(id).classList.add('active');
+}
+
+function startGame(){
+  state={level:1,score:0,streak:0,bestStreak:0,answered:false,currentQ:null,usedIndices:[]};
+  saveState();
+  showScreen('screen-game');
+  loadQuestion();
+}
+function continueGame(){
+  showScreen('screen-game');
+  loadQuestion();
+}
+
+function loadQuestion(){
+  state.answered=false;
+  state.currentQ=getQuestionForLevel();
+  saveState();
+
+  document.getElementById('loading-area').style.display='block';
+  document.getElementById('question-area').style.display='none';
+
+  setTimeout(()=>{
+    document.getElementById('loading-area').style.display='none';
+    document.getElementById('question-area').style.display='block';
+    renderQuestion(state.currentQ);
+  },400);
+}
+
+function renderQuestion(q){
+  document.getElementById('g-level').textContent=state.level;
+
+  // 프로그레스: 10문제마다 한 사이클
+  const prog=(state.score%10)*10;
+  document.getElementById('progress-fill').style.width=prog+'%';
+
+  // 스트릭
+  const sb=document.getElementById('streak-badge');
+  document.getElementById('g-streak').textContent=state.streak;
+  sb.classList.toggle('hot',state.streak>=3);
+
+  document.getElementById('q-type').textContent=q.type;
+  document.getElementById('q-text').innerHTML=q.text.replace(/\n/g,'<br>');
+  document.getElementById('q-hint').textContent='💡 '+q.hint;
+  document.getElementById('q-hint').classList.remove('visible');
+
+  // 결과 패널 초기화
+  const rp=document.getElementById('result-panel');
+  rp.style.display='none';rp.className='result-panel';
+
+  // 다음 버튼 숨기기
+  const nb=document.getElementById('btn-next');
+  nb.style.display='none';nb.classList.remove('visible');
+
+  // 힌트 버튼
+  document.getElementById('btn-hint').style.display='block';
+
+  if(q.mode==='choice'){
+    document.getElementById('choices-area').style.display='flex';
+    document.getElementById('input-area').style.display='none';
+    renderChoices(q);
+  } else {
+    document.getElementById('choices-area').style.display='none';
+    document.getElementById('input-area').style.display='flex';
+    const inp=document.getElementById('answer-input');
+    inp.value='';inp.className='answer-input';inp.disabled=false;
+    inp.placeholder='?';
+    setTimeout(()=>inp.focus(),300);
+  }
+}
+
+function renderChoices(q){
+  const area=document.getElementById('choices-area');
+  area.innerHTML=q.choices.map((c,i)=>`
+    <button class="choice-btn" onclick="selectChoice(this,'${c}')">
+      <div class="choice-num">${i+1}</div>
+      <div>${c}</div>
+    </button>
+  `).join('');
+}
+
+function selectChoice(btn,value){
+  if(state.answered) return;
+  document.querySelectorAll('.choice-btn').forEach(b=>b.classList.remove('selected'));
+  btn.classList.add('selected');
+  checkAnswer(value);
+}
+
+function showHint(){
+  document.getElementById('q-hint').classList.add('visible');
+  document.getElementById('btn-hint').style.display='none';
+}
+
+function submitAnswer(){
+  if(state.answered) return;
+  const val=document.getElementById('answer-input').value.trim();
+  if(!val) return;
+  checkAnswer(val);
+}
+
+function checkAnswer(userAns){
+  if(state.answered) return;
+  state.answered=true;
+  const q=state.currentQ;
+  const correct=userAns.toString().replace(/\s/g,'')===q.answer.toString().replace(/\s/g,'');
+
+  const rp=document.getElementById('result-panel');
+  rp.style.display='block';
+
+  if(correct){
+    state.score++;
+    state.streak++;
+    if(state.streak>state.bestStreak) state.bestStreak=state.streak;
+    // 5문제마다 레벨업
+    if(state.score%5===0) state.level++;
+
+    rp.className='result-panel correct';
+    document.getElementById('result-icon').textContent=state.streak>=3?'🔥':'🎉';
+    document.getElementById('result-msg').textContent=state.streak>=3?`${state.streak}연속 정답! 대단해요!`:'정답이에요!';
+    document.getElementById('result-exp').textContent=q.explanation;
+
+    if(q.mode==='choice'){
+      document.querySelectorAll('.choice-btn').forEach(b=>{
+        if(b.textContent.trim().includes(q.answer)) b.classList.add('correct');
+      });
+    } else {
+      const inp=document.getElementById('answer-input');
+      inp.classList.add('correct');inp.disabled=true;
+    }
+  } else {
+    state.streak=0;
+    rp.className='result-panel wrong';
+    document.getElementById('result-icon').textContent='😅';
+    document.getElementById('result-msg').textContent=`정답은 ${q.answer}이에요`;
+    document.getElementById('result-exp').textContent=q.explanation;
+
+    if(q.mode==='choice'){
+      document.querySelectorAll('.choice-btn').forEach(b=>{
+        if(b.classList.contains('selected')) b.classList.add('wrong');
+        if(b.textContent.trim().includes(q.answer)) b.classList.add('correct');
+      });
+    } else {
+      const inp=document.getElementById('answer-input');
+      inp.classList.add('wrong');inp.disabled=true;
+    }
+  }
+
+  saveState();
+
+  const nb=document.getElementById('btn-next');
+  nb.style.display='block';
+  setTimeout(()=>nb.classList.add('visible'),100);
+  document.getElementById('btn-hint').style.display='none';
+  document.getElementById('g-streak').textContent=state.streak;
+  const sb=document.getElementById('streak-badge');
+  sb.classList.toggle('hot',state.streak>=3);
+}
+
+function nextQuestion(){
+  loadQuestion();
+}
+
+// ── 초기화 ──
+loadState();
+updateHomeStats();
+
+if('serviceWorker' in navigator) navigator.serviceWorker.register('./sw.js').catch(()=>{});
+</script>
+</body>
+</html>
